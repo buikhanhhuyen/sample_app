@@ -1,11 +1,11 @@
 class UsersController < ApplicationController
   before_action :logged_in_user, except: [:new, :create, :show]
-  before_action :find_user, only: [:show, :edit, :update]
+  before_action :find_user, except: [:new, :create, :index]
   before_action :correct_user, only: [:edit, :update]
   before_action :admin_user, only: :destroy
   
   def index
-    @users = User.paginate page: params[:page]
+    @users = User.activated.paginate page: params[:page]
   end
 
   def show
@@ -18,9 +18,9 @@ class UsersController < ApplicationController
   def create
     @user = User.new user_params 
     if @user.save
-      log_in @user
-      flash[:success] = "Welcome to the Sample App!"
-      redirect_to @user
+      @user.send_activation_email
+      flash[:info] = "Please check your email to activate your account."
+      redirect_to root_url
     else
       render :new
     end
@@ -67,7 +67,7 @@ class UsersController < ApplicationController
   end
 
   def find_user
-    unless @user = User.find_by id: params[:id]
+    unless @user = User.find_by(id: params[:id])
       flash[:danger] = "User not found!"
       redirect_to root_url
     end
